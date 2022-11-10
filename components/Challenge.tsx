@@ -2,6 +2,7 @@ import { Modal, Button, Group } from '@mantine/core';
 import Image from "next/image";
 import { useEffect, useState } from 'react';
 
+//ImageData must contain a "null" key, but SoundData must not!
 const ImageData: Record<string, string> = {
   milk: "/assets/milk.jpg",
   water: "/assets/water.jpg",
@@ -14,6 +15,9 @@ const ImageData: Record<string, string> = {
   tokoloshe: "/assets/tokoloshe.jpg",
   ball: "/assets/ball.jpg",
   chair: "/assets/chair.jpg",
+  //peppa: "/assets/peppa.jpg", //These might be risky. Don't want to interfere with his working menu skillz
+  //netflix: "/assets/netflix.jpg",
+  null: "/assets/null.jpg",
 };
 
 const SoundData: Record<string, string> = {
@@ -28,14 +32,19 @@ const SoundData: Record<string, string> = {
   tokoloshe: "/assets/tokoloshe.mp3",
   ball: "/assets/ball.mp3",
   chair: "/assets/chair.mp3",
+  //peppa: "/assets/peppa.mp3",
+  //netflix: "/assets/netflix.mp3",
 };
 
 const intervalID = [0];
+const keepTargetPicProb = 1.0;
+const keepNonTargetPicProb = 0.01; //Will mostly be only the target image
+const wrongWait = 500; //2500 is good to stop multi-clicking, but consider eg. 500 to lower frustration
 
 interface ChallengeProps {
   isOpen: boolean;
   onClosedCallback: () => void;
-  soundEffectCallback: (pth:string) => void;
+  soundEffectCallback: (pth:string, chan:number) => void;
 }
 // Takes ChallengeProps as a parameter
 function Challenge({ isOpen, onClosedCallback, soundEffectCallback}: ChallengeProps) {
@@ -45,21 +54,31 @@ function Challenge({ isOpen, onClosedCallback, soundEffectCallback}: ChallengePr
   const [targetKey, setTargetKey] = useState("");
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   
-  //Using trick from here for iOS: https://stackoverflow.com/questions/31776548/why-cant-javascript-play-audio-files-on-iphone-safari/31777081#31777081
-  //const soundEffect = new Audio();
-  //console.log(typeof soundEffect)
-
-  //console.log([displayTarget,clickable,needsNewDraw,targetKey,selectedKeys,intervalID])
 
   if (needsNewDraw) {
-    const selKeys = Object.keys(ImageData).sort((a,b)=>Math.random() - 0.5).slice(0,4);
-    setSelectedKeys(selKeys);
+    const selKeys = Object.keys(SoundData).sort((a,b)=>Math.random() - 0.5).slice(0,4);
+    
     const randomIndex = Math.floor(Math.random() * selKeys.length);
     const randomKey = selKeys[randomIndex];
+
+    //With probability keepNonTargetPicProb, replace each non-target key with a null key
+    const selKeysWithNulls = selKeys.map((key) => {
+      if (key === randomKey) {
+        return key;
+      } else {
+        if (Math.random() < keepNonTargetPicProb) {
+          return key;
+        } else {
+          return "null";
+        }
+      }
+    });
+
+    setSelectedKeys(selKeysWithNulls);
     setTargetKey(randomKey);
     setNeedsNewDraw(false);
     //This is the rate at which the target pic will be displayed.
-    if (Math.random() < 1.0) {
+    if (Math.random() < keepTargetPicProb) {
       setDisplayTarget(true);
     }
   }
@@ -68,18 +87,18 @@ function Challenge({ isOpen, onClosedCallback, soundEffectCallback}: ChallengePr
     if (isOpen) {
       //Play bell sound
       //(new Audio("/assets/dingdong.mp3")).play();
-      soundEffectCallback("/assets/dingdong.mp3");
+      soundEffectCallback("/assets/dingdong.mp3",1);
 
       //Wait, then play target word sound
       
       //const audio = new Audio(SoundData[targetKey]);
       //setTimeout(() => { audio.play(); }, 1200);
 
-      setTimeout(() => { soundEffectCallback(SoundData[targetKey]); }, 1200);
+      setTimeout(() => { soundEffectCallback(SoundData[targetKey],1); }, 1200);
 
       //Repeat word sound
       //const timerID = window.setInterval(() => { audio.play(); }, 4000);
-      const timerID = window.setInterval(() => { soundEffectCallback(SoundData[targetKey]); }, 4000);
+      const timerID = window.setInterval(() => { soundEffectCallback(SoundData[targetKey],1); }, 4000);
       intervalID.push(timerID);
       if (displayTarget) {
         setTimeout(() => { setDisplayTarget(false); }, 2500);
@@ -96,7 +115,7 @@ function Challenge({ isOpen, onClosedCallback, soundEffectCallback}: ChallengePr
       intervalID.forEach((id) => {window.clearInterval(id);});
       intervalID.length = 0;
       //(new Audio("/assets/victory.mp3")).play();
-      soundEffectCallback("/assets/victory.mp3");
+      soundEffectCallback("/assets/victory.mp3",1);
       setTimeout(() => { 
         setClickable(true);
         //setClassForKey({...classForKey, [key]: "correct"});
@@ -107,11 +126,11 @@ function Challenge({ isOpen, onClosedCallback, soundEffectCallback}: ChallengePr
     } else {
       
       //(new Audio("/assets/georgecry.mp3")).play();
-      soundEffectCallback("/assets/georgecry.mp3");
+      soundEffectCallback("/assets/georgecry.mp3",2);
       //setClassForKey({...classForKey, [key]: "incorrect"});
       setTimeout(() => { //Changed from "setInterval" to "setTimeout"
         setClickable(true);
-      }, 2500);
+      }, wrongWait);
     }
     
   }
@@ -142,8 +161,8 @@ if (displayTarget) {
         onClose={() => {}}
         size="75vh" // 75% of the viewport height
       >
-        {/* 2x2 grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr"}}>
+        {/* 2x2 grid, with vertical spacing */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gridGap: "10px", alignItems: "center" }}>
             {selectedKeys.map((key) => (
             <div key={key} className = "" >
             <Image

@@ -3,14 +3,17 @@ import YouTube, { YouTubeEvent, YouTubePlayer } from "react-youtube";
 import { MutableRefObject, useRef, useState } from "react";
 import Challenge from "./Challenge";
 
-const TIMEOUT = 30 * 1000;
+const TIMEOUT = 5 * 1000;
 
 
 
 const Video: NextPage = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [video, setVideo] = useState<YouTubePlayer | null>(null);
+  //Using trick from here for iOS: https://stackoverflow.com/questions/31776548/why-cant-javascript-play-audio-files-on-iphone-safari/31777081#31777081
+  //ToDo: Make this have multiple channels and play the "wrong" sound on a non-competing channel
   const [soundEffect, setSoundEffect] = useState<HTMLAudioElement | null>(null);
+  const [soundEffect2, setSoundEffect2] = useState<HTMLAudioElement | null>(null);
 
   if (typeof window === "undefined") {
     return <div></div>;
@@ -21,10 +24,17 @@ const Video: NextPage = () => {
   //if the vid URL parameter is empty, then set it to "RtBSa-GOpoQ"
   const vidID = params.get("vid") || "RtBSa-GOpoQ";
   
-  function playSoundEffect(pth: string): void {
-    if (soundEffect !== null) {
-      soundEffect.src = pth;
-      soundEffect.play();
+  function playSoundEffect(pth: string, chan: number): void {
+    if (chan === 1) {
+      if (soundEffect !== null) {
+        soundEffect.src = pth;
+        soundEffect.play();
+      }
+    } else {
+      if (soundEffect2 !== null) {
+        soundEffect2.src = pth;
+        soundEffect2.play();
+      }
     }
   }
 
@@ -42,6 +52,9 @@ const Video: NextPage = () => {
     setVideo(event.target);
     if (soundEffect === null) {
       setSoundEffect(new Audio("/assets/venkhorse.mp3"));
+    }
+    if (soundEffect2 === null) {
+      setSoundEffect2(new Audio("/assets/venkhorse.mp3"));
     }
   }
 
