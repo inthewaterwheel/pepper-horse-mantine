@@ -71,7 +71,7 @@ function Challenge({ isOpen, onClosedCallback }: ChallengeProps) {
       const audio = new Audio(SoundData[targetKey]);
       setTimeout(() => { audio.play(); }, 1200);
       //Repeat word sound
-      const timerID = setInterval(() => { audio.play(); }, 4000);
+      const timerID = window.setInterval(() => { audio.play(); }, 4000);
       intervalID.push(timerID);
       if (displayTarget) {
         setTimeout(() => { setDisplayTarget(false); }, 2500);
