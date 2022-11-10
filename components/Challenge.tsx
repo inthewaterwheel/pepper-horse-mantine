@@ -35,16 +35,17 @@ const intervalID = [0];
 interface ChallengeProps {
   isOpen: boolean;
   onClosedCallback: () => void;
+  soundEffectCallback: (pth:string) => void;
 }
 // Takes ChallengeProps as a parameter
-function Challenge({ isOpen, onClosedCallback }: ChallengeProps) {
+function Challenge({ isOpen, onClosedCallback, soundEffectCallback}: ChallengeProps) {
   const [displayTarget, setDisplayTarget] = useState(true);
   const [clickable, setClickable] = useState(true);
   const [needsNewDraw, setNeedsNewDraw] = useState(true);
   const [targetKey, setTargetKey] = useState("");
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   
-  //Maybe try trick from here: https://stackoverflow.com/questions/31776548/why-cant-javascript-play-audio-files-on-iphone-safari/31777081#31777081
+  //Using trick from here for iOS: https://stackoverflow.com/questions/31776548/why-cant-javascript-play-audio-files-on-iphone-safari/31777081#31777081
   //const soundEffect = new Audio();
   //console.log(typeof soundEffect)
 
@@ -66,12 +67,19 @@ function Challenge({ isOpen, onClosedCallback }: ChallengeProps) {
   useEffect(() => {
     if (isOpen) {
       //Play bell sound
-      (new Audio("/assets/dingdong.mp3")).play();
+      //(new Audio("/assets/dingdong.mp3")).play();
+      soundEffectCallback("/assets/dingdong.mp3");
+
       //Wait, then play target word sound
-      const audio = new Audio(SoundData[targetKey]);
-      setTimeout(() => { audio.play(); }, 1200);
+      
+      //const audio = new Audio(SoundData[targetKey]);
+      //setTimeout(() => { audio.play(); }, 1200);
+
+      setTimeout(() => { soundEffectCallback(SoundData[targetKey]); }, 1200);
+
       //Repeat word sound
-      const timerID = window.setInterval(() => { audio.play(); }, 4000);
+      //const timerID = window.setInterval(() => { audio.play(); }, 4000);
+      const timerID = window.setInterval(() => { soundEffectCallback(SoundData[targetKey]); }, 4000);
       intervalID.push(timerID);
       if (displayTarget) {
         setTimeout(() => { setDisplayTarget(false); }, 2500);
@@ -87,7 +95,8 @@ function Challenge({ isOpen, onClosedCallback }: ChallengeProps) {
     if (key == targetKey){
       intervalID.forEach((id) => {window.clearInterval(id);});
       intervalID.length = 0;
-      (new Audio("/assets/victory.mp3")).play();
+      //(new Audio("/assets/victory.mp3")).play();
+      soundEffectCallback("/assets/victory.mp3");
       setTimeout(() => { 
         setClickable(true);
         //setClassForKey({...classForKey, [key]: "correct"});
@@ -97,7 +106,8 @@ function Challenge({ isOpen, onClosedCallback }: ChallengeProps) {
       
     } else {
       
-      (new Audio("/assets/georgecry.mp3")).play();
+      //(new Audio("/assets/georgecry.mp3")).play();
+      soundEffectCallback("/assets/georgecry.mp3");
       //setClassForKey({...classForKey, [key]: "incorrect"});
       setTimeout(() => { //Changed from "setInterval" to "setTimeout"
         setClickable(true);

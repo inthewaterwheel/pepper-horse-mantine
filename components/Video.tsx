@@ -1,14 +1,16 @@
 import { type NextPage } from "next";
 import YouTube, { YouTubeEvent, YouTubePlayer } from "react-youtube";
-import { useState } from "react";
+import { MutableRefObject, useRef, useState } from "react";
 import Challenge from "./Challenge";
 
 const TIMEOUT = 30 * 1000;
 
 
+
 const Video: NextPage = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [video, setVideo] = useState<YouTubePlayer | null>(null);
+  const [soundEffect, setSoundEffect] = useState<HTMLAudioElement | null>(null);
 
   if (typeof window === "undefined") {
     return <div></div>;
@@ -19,7 +21,12 @@ const Video: NextPage = () => {
   //if the vid URL parameter is empty, then set it to "RtBSa-GOpoQ"
   const vidID = params.get("vid") || "RtBSa-GOpoQ";
   
-  //const vidID = params.get('vid');
+  function playSoundEffect(pth: string): void {
+    if (soundEffect !== null) {
+      soundEffect.src = pth;
+      soundEffect.play();
+    }
+  }
 
   function onReady(event: YouTubeEvent) {
     // Start the video immediately
@@ -33,6 +40,9 @@ const Video: NextPage = () => {
 
     // Store the video in the state
     setVideo(event.target);
+    if (soundEffect === null) {
+      setSoundEffect(new Audio("/assets/venkhorse.mp3"));
+    }
   }
 
   function onClosedCallback() {
@@ -63,10 +73,11 @@ const Video: NextPage = () => {
             fs: 0,
           }}
           onReady={onReady}
+          onPause={() => {}}
         />
         <button onClick={() => setIsOpen(true)}>Open</button>
       </div>
-      <Challenge isOpen={isOpen} onClosedCallback={onClosedCallback} />
+      <Challenge isOpen={isOpen} onClosedCallback={onClosedCallback} soundEffectCallback={playSoundEffect}/>
     </>
   );
 };
