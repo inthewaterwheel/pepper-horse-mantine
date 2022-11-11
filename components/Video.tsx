@@ -5,15 +5,11 @@ import Challenge from "./Challenge";
 
 //URL parameters example: ?vid=cMgsfVTg37Q&decoyProb=0.5&keepTargetPicProb=0.5&waitAfterWrongAnswer=3.0&challengeInterval=20.0
 
-
-
 const Video: NextPage = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [video, setVideo] = useState<YouTubePlayer | null>(null);
-  //Using trick from here for iOS: https://stackoverflow.com/questions/31776548/why-cant-javascript-play-audio-files-on-iphone-safari/31777081#31777081
-  //ToDo: Make this have multiple channels and play the "wrong" sound on a non-competing channel
-  const [soundEffect, setSoundEffect] = useState<HTMLAudioElement | null>(null);
-  const [soundEffect2, setSoundEffect2] = useState<HTMLAudioElement | null>(null);
+
+ 
 
   if (typeof window === "undefined") {
     return <div></div>;
@@ -25,21 +21,10 @@ const Video: NextPage = () => {
   const vidID = params.get("vid") || "RtBSa-GOpoQ";
   const TIMEOUT = parseFloat(params.get("challengeInterval") || "30.0") * 1000;
   
-  function playSoundEffect(pth: string, chan: number): void {
-    if (chan === 1) {
-      if (soundEffect !== null) {
-        soundEffect.src = pth;
-        soundEffect.play();
-      }
-    } else {
-      if (soundEffect2 !== null) {
-        soundEffect2.src = pth;
-        soundEffect2.play();
-      }
-    }
-  }
+  
 
   function onReady(event: YouTubeEvent) {
+    console.log("HowOften?")
     // Start the video immediately
     event.target.playVideo();
 
@@ -51,12 +36,7 @@ const Video: NextPage = () => {
 
     // Store the video in the state
     setVideo(event.target);
-    if (soundEffect === null) {
-      setSoundEffect(new Audio("/assets/venkhorse.mp3"));
-    }
-    if (soundEffect2 === null) {
-      setSoundEffect2(new Audio("/assets/venkhorse.mp3"));
-    }
+  
   }
 
   function onClosedCallback() {
@@ -92,7 +72,7 @@ const Video: NextPage = () => {
         />
         <button onClick={() => setIsOpen(true)}>Open</button>
       </div>
-      <Challenge isOpen={isOpen} params={params} onClosedCallback={onClosedCallback} soundEffectCallback={playSoundEffect}/>
+      <Challenge isOpen={isOpen} params={params} onClosedCallback={onClosedCallback} />
     </>
   );
 };

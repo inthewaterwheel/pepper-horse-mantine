@@ -69,16 +69,48 @@ interface ChallengeProps {
   isOpen: boolean;
   params: URLSearchParams;
   onClosedCallback: () => void;
-  soundEffectCallback: (pth:string, chan:number) => void;
 }
 // Takes ChallengeProps as a parameter
-function Challenge({ isOpen, onClosedCallback, soundEffectCallback, params }: ChallengeProps) {
+function Challenge({ isOpen, onClosedCallback, params }: ChallengeProps) {
   const [firstRender, setFirstRender] = useState(true);
   const [displayTarget, setDisplayTarget] = useState(true);
   const [clickable, setClickable] = useState(true);
   const [needsNewDraw, setNeedsNewDraw] = useState(true);
   const [targetKey, setTargetKey] = useState("");
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
+
+    //Using trick from here for iOS: https://stackoverflow.com/questions/31776548/why-cant-javascript-play-audio-files-on-iphone-safari/31777081#31777081
+  //ToDo: Make this have multiple channels and play the "wrong" sound on a non-competing channel
+  const [soundEffect, setSoundEffect] = useState<HTMLAudioElement | null>(null);
+  const [soundEffect2, setSoundEffect2] = useState<HTMLAudioElement | null>(null);
+  const [wrongSound, setWrongSound] = useState<HTMLAudioElement | null>(null);
+  const [rightSound, setRightSound] = useState<HTMLAudioElement | null>(null);
+
+  //For sounds that aren't on clicks, we can play them on two channels by redirecting the source - this is required for them to work on iOS.
+  //For sounds that are on clicks, we load the audio, and then play it upon click, to improve response times.
+  function playSoundEffect(pth: string, chan: number): void {
+    if (pth === "wrongSound") {
+      wrongSound?.play();
+      return;
+    }
+
+    if (pth === "rightSound") {
+      rightSound?.play();
+      return;
+    }
+    
+    if (chan === 1) {
+      if (soundEffect !== null) {
+        soundEffect.src = pth;
+        soundEffect.play();
+      }
+    } else {
+      if (soundEffect2 !== null) {
+        soundEffect2.src = pth;
+        soundEffect2.play();
+      }
+    }
+  }
   
   const decoyProb = params.get("decoyProb") || 1.0;
   const keepTargetPicProb = params.get("keepTargetPicProb") || 1.0;
@@ -116,17 +148,17 @@ function Challenge({ isOpen, onClosedCallback, soundEffectCallback, params }: Ch
     if (isOpen) {
       //Play bell sound
       //(new Audio("/assets/dingdong.mp3")).play();
-      soundEffectCallback("/assets/dingdong.mp3",1);
+      playSoundEffect("/assets/dingdong.mp3",1);
 
       //Wait, then play target word sound
       
       //const audio = new Audio(SoundData[targetKey]);
       //setTimeout(() => { audio.play(); }, 1200);
-      setTimeout(() => { soundEffectCallback(SoundData[targetKey],1); }, 1200);
+      setTimeout(() => { playSoundEffect(SoundData[targetKey],1); }, 1200);
 
       //Repeat word sound
       //const timerID = window.setInterval(() => { audio.play(); }, 4000);
-      const timerID = window.setInterval(() => { soundEffectCallback(SoundData[targetKey],1); }, 4000);
+      const timerID = window.setInterval(() => { playSoundEffect(SoundData[targetKey],1); }, 4000);
       intervalID.push(timerID);
       if (displayTarget) {
         setTimeout(() => { setDisplayTarget(false); }, 2500);
@@ -143,7 +175,7 @@ function Challenge({ isOpen, onClosedCallback, soundEffectCallback, params }: Ch
       intervalID.forEach((id) => {window.clearInterval(id);});
       intervalID.length = 0;
       //(new Audio("/assets/victory.mp3")).play();
-      soundEffectCallback("/assets/victory.mp3",1);
+      playSoundEffect("rightSound",3);
       setTimeout(() => { 
         setClickable(true);
         setNeedsNewDraw(true);
@@ -153,7 +185,7 @@ function Challenge({ isOpen, onClosedCallback, soundEffectCallback, params }: Ch
     } else {
       
       //(new Audio("/assets/georgecry.mp3")).play();
-      soundEffectCallback("/assets/georgecry.mp3",2);
+      playSoundEffect("wrongSound",3);
       setTimeout(() => { //Changed from "setInterval" to "setTimeout"
         setClickable(true);
       }, waitAfterWrongAnswer);
@@ -184,6 +216,25 @@ function Challenge({ isOpen, onClosedCallback, soundEffectCallback, params }: Ch
       );
     }
   } else {
+
+    if (soundEffect === null) {
+      setSoundEffect(new Audio("/assets/venkhorse.mp3"));
+    }
+    if (soundEffect2 === null) {
+      setSoundEffect2(new Audio("/assets/venkhorse.mp3"));
+    }
+    if (wrongSound === null) {
+      const snd = new Audio("/assets/georgecry.mp3");
+      snd.load();
+      setWrongSound(snd);
+    }
+    if (rightSound === null) {
+      //load audio, and make sure it preloads
+      const snd = new Audio("/assets/victory.mp3");
+      snd.load();
+      setRightSound(snd);
+    }
+
     setTimeout(() => { setFirstRender(false); }, 10000);
   }
 
