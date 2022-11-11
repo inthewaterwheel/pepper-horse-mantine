@@ -1,9 +1,9 @@
 import { type NextPage } from "next";
 import YouTube, { YouTubeEvent, YouTubePlayer } from "react-youtube";
-import { MutableRefObject, useRef, useState } from "react";
+import { useState } from "react";
 import Challenge from "./Challenge";
 
-const TIMEOUT = 5 * 1000;
+//URL parameters example: ?vid=cMgsfVTg37Q&decoyProb=0.5&keepTargetPicProb=0.5&waitAfterWrongAnswer=3.0&challengeInterval=20.0
 
 
 
@@ -23,6 +23,7 @@ const Video: NextPage = () => {
   const params = new URLSearchParams(search);
   //if the vid URL parameter is empty, then set it to "RtBSa-GOpoQ"
   const vidID = params.get("vid") || "RtBSa-GOpoQ";
+  const TIMEOUT = parseFloat(params.get("challengeInterval") || "30.0") * 1000;
   
   function playSoundEffect(pth: string, chan: number): void {
     if (chan === 1) {
@@ -71,10 +72,10 @@ const Video: NextPage = () => {
       setIsOpen(true);
     }, TIMEOUT);
   }
-//videoId="n6O3KaQrcBo"
+
   return (
     <>
-      <div style={{ zIndex: 1 }}>
+      <div style={{ zIndex: 1 } }>
         <YouTube
           videoId={vidID}
           opts={{
@@ -84,13 +85,14 @@ const Video: NextPage = () => {
             rel: 0,
             modestbranding: 1,
             fs: 0,
+            autoplay: 1,
           }}
           onReady={onReady}
           onPause={() => {}}
         />
         <button onClick={() => setIsOpen(true)}>Open</button>
       </div>
-      <Challenge isOpen={isOpen} onClosedCallback={onClosedCallback} soundEffectCallback={playSoundEffect}/>
+      <Challenge isOpen={isOpen} params={params} onClosedCallback={onClosedCallback} soundEffectCallback={playSoundEffect}/>
     </>
   );
 };

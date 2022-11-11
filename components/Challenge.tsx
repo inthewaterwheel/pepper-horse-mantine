@@ -1,7 +1,8 @@
-import { Modal, Button, Group } from '@mantine/core';
+import { Modal } from '@mantine/core';
 import Image from "next/image";
 import { useEffect, useState } from 'react';
 
+/*
 //ImageData must contain a "null" key, but SoundData must not!
 const ImageData: Record<string, string> = {
   milk: "/assets/milk.jpg",
@@ -35,26 +36,54 @@ const SoundData: Record<string, string> = {
   //peppa: "/assets/peppa.mp3",
   //netflix: "/assets/netflix.mp3",
 };
+*/
+
+
+//ImageData must contain a "null" key, but SoundData must not!
+const ImageData: Record<string, string> = {
+  daddypig: "/assets/daddypig.jpg",
+  missrabbit: "/assets/missrabbit.jpg",
+  teddy: "/assets/teddy.jpg",
+  duck: "/assets/duck.jpg",
+  dinosaur: "/assets/dinosaur.jpg",
+  george: "/assets/george.jpg",
+  dannydog: "/assets/dannydog.jpg",
+  peppa: "/assets/peppa.jpg",
+  null: "/assets/null.jpg",
+};
+
+const SoundData: Record<string, string> = {
+  daddypig: "/assets/daddypig.mp3",
+  missrabbit: "/assets/missrabbit.mp3",
+  teddy: "/assets/teddy.mp3",
+  duck: "/assets/duck.mp3",
+  dinosaur: "/assets/dinosaur.mp3",
+  george: "/assets/george.mp3",
+  dannydog: "/assets/dannydog.mp3",
+  peppa: "/assets/peppa.mp3",
+};
 
 const intervalID = [0];
-const keepTargetPicProb = 1.0;
-const keepNonTargetPicProb = 0.01; //Will mostly be only the target image
-const wrongWait = 500; //2500 is good to stop multi-clicking, but consider eg. 500 to lower frustration
 
 interface ChallengeProps {
   isOpen: boolean;
+  params: URLSearchParams;
   onClosedCallback: () => void;
   soundEffectCallback: (pth:string, chan:number) => void;
 }
 // Takes ChallengeProps as a parameter
-function Challenge({ isOpen, onClosedCallback, soundEffectCallback}: ChallengeProps) {
+function Challenge({ isOpen, onClosedCallback, soundEffectCallback, params }: ChallengeProps) {
+  const [firstRender, setFirstRender] = useState(true);
   const [displayTarget, setDisplayTarget] = useState(true);
   const [clickable, setClickable] = useState(true);
   const [needsNewDraw, setNeedsNewDraw] = useState(true);
   const [targetKey, setTargetKey] = useState("");
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   
-
+  const decoyProb = params.get("decoyProb") || 1.0;
+  const keepTargetPicProb = params.get("keepTargetPicProb") || 1.0;
+  const waitAfterWrongAnswer = parseFloat(params.get("waitAfterWrongAnswer") || "2.5") * 1000;
+  
   if (needsNewDraw) {
     const selKeys = Object.keys(SoundData).sort((a,b)=>Math.random() - 0.5).slice(0,4);
     
@@ -66,7 +95,7 @@ function Challenge({ isOpen, onClosedCallback, soundEffectCallback}: ChallengePr
       if (key === randomKey) {
         return key;
       } else {
-        if (Math.random() < keepNonTargetPicProb) {
+        if (Math.random() < decoyProb) {
           return key;
         } else {
           return "null";
@@ -93,7 +122,6 @@ function Challenge({ isOpen, onClosedCallback, soundEffectCallback}: ChallengePr
       
       //const audio = new Audio(SoundData[targetKey]);
       //setTimeout(() => { audio.play(); }, 1200);
-
       setTimeout(() => { soundEffectCallback(SoundData[targetKey],1); }, 1200);
 
       //Repeat word sound
@@ -118,7 +146,6 @@ function Challenge({ isOpen, onClosedCallback, soundEffectCallback}: ChallengePr
       soundEffectCallback("/assets/victory.mp3",1);
       setTimeout(() => { 
         setClickable(true);
-        //setClassForKey({...classForKey, [key]: "correct"});
         setNeedsNewDraw(true);
         onClosedCallback();
       }, 1000);
@@ -127,12 +154,37 @@ function Challenge({ isOpen, onClosedCallback, soundEffectCallback}: ChallengePr
       
       //(new Audio("/assets/georgecry.mp3")).play();
       soundEffectCallback("/assets/georgecry.mp3",2);
-      //setClassForKey({...classForKey, [key]: "incorrect"});
       setTimeout(() => { //Changed from "setInterval" to "setTimeout"
         setClickable(true);
-      }, wrongWait);
+      }, waitAfterWrongAnswer);
     }
     
+  }
+
+
+//If this modal is not active, then just place an unclickable transparent Modal over the video
+//Copilot made this from the above comment
+  if (!firstRender) {
+    if (!isOpen) {
+      return (
+        <div>
+          <Modal
+            opened={true}
+            size="0%"
+            withCloseButton={false}
+            onClose={() => {}}
+            overlayOpacity={0.0}
+            style={{position: "absolute", top: -100, left: -100, width: "100%", height: "100%", backgroundColor: "rgba(0,0,0,0.0)" }} 
+          >
+            <div style={{position: "absolute", top: 0, left: 0, width: "100%", height: "100%", backgroundColor: "rgba(0,0,0,0.0)" }} draggable={false} 
+      onClick={() => {}}
+      onTouchStart={() => {}}/>
+          </Modal>
+        </div>
+      );
+    }
+  } else {
+    setTimeout(() => { setFirstRender(false); }, 10000);
   }
 
 // Show just the target image
@@ -143,10 +195,14 @@ if (displayTarget) {
       withCloseButton={false}
       opened={isOpen}
       onClose={() => {}}
+      onClick={() => {}}
+      onTouchStart={() => {}}
       size="75vh" // 75% of the viewport height
       >
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-          <Image src={ImageData[targetKey]} width={400} height={400} objectFit="cover" />
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center",  MozUserSelect: "none", WebkitUserSelect: "none", msUserSelect: "none", userSelect:"none" }}>
+          <Image src={ImageData[targetKey]} width={400} height={400} objectFit="cover" draggable={false} 
+      onClick={() => {}}
+      onTouchStart={() => {}}/>
         </div>
       </Modal>
     );
@@ -162,7 +218,7 @@ if (displayTarget) {
         size="75vh" // 75% of the viewport height
       >
         {/* 2x2 grid, with vertical spacing */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gridGap: "10px", alignItems: "center" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gridGap: "10px", alignItems: "center", MozUserSelect: "none", WebkitUserSelect: "none", msUserSelect: "none", userSelect:"none"}}>
             {selectedKeys.map((key) => (
             <div key={key} className = "" >
             <Image
@@ -172,7 +228,9 @@ if (displayTarget) {
               width={600}
               height={600}
               objectFit="cover"
+              draggable={false}
               onClick={() => onImageClick(key)}
+              onTouchStart={() => onImageClick(key)}
             />
             </div>
           ))}
@@ -183,9 +241,3 @@ if (displayTarget) {
 }
 
 export default Challenge;
-
-  //If you want to make the order randomly shuffle upon an incorrect answer, then replace with the following:
-  // {selectedKeys.sort((a,b)=>Math.random() - 0.5).map((key) => (
-
-  //Something I didn't understand:
-  //<div key={key} className = {classForKey[key] ?? ""} >
