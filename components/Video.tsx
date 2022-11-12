@@ -24,7 +24,6 @@ const Video: NextPage = () => {
   
 
   function onReady(event: YouTubeEvent) {
-    console.log("HowOften?")
     // Start the video immediately
     event.target.playVideo();
 
@@ -66,15 +65,19 @@ const Video: NextPage = () => {
             modestbranding: 1,
             fs: 0,
             autoplay: 1,
+            touchAction: "none",
           }}
           onReady={onReady}
           onPause={() => {}}
+          
         />
-        <button onClick={() => setIsOpen(true)}>Open</button>
+       
       </div>
       <Challenge isOpen={isOpen} params={params} onClosedCallback={onClosedCallback} />
     </>
   );
 };
+
+// <button onClick={() => setIsOpen(true)}>Open</button>
 
 export default Video;

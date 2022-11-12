@@ -78,7 +78,6 @@ function Challenge({ isOpen, onClosedCallback, params }: ChallengeProps) {
   const [needsNewDraw, setNeedsNewDraw] = useState(true);
   const [targetKey, setTargetKey] = useState("");
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
-
     //Using trick from here for iOS: https://stackoverflow.com/questions/31776548/why-cant-javascript-play-audio-files-on-iphone-safari/31777081#31777081
   //ToDo: Make this have multiple channels and play the "wrong" sound on a non-competing channel
   const [soundEffect, setSoundEffect] = useState<HTMLAudioElement | null>(null);
@@ -86,32 +85,8 @@ function Challenge({ isOpen, onClosedCallback, params }: ChallengeProps) {
   const [wrongSound, setWrongSound] = useState<HTMLAudioElement | null>(null);
   const [rightSound, setRightSound] = useState<HTMLAudioElement | null>(null);
 
-  //For sounds that aren't on clicks, we can play them on two channels by redirecting the source - this is required for them to work on iOS.
-  //For sounds that are on clicks, we load the audio, and then play it upon click, to improve response times.
-  function playSoundEffect(pth: string, chan: number): void {
-    if (pth === "wrongSound") {
-      wrongSound?.play();
-      return;
-    }
-
-    if (pth === "rightSound") {
-      rightSound?.play();
-      return;
-    }
+  const [boundaryString, setBoundaryString] = useState("");
     
-    if (chan === 1) {
-      if (soundEffect !== null) {
-        soundEffect.src = pth;
-        soundEffect.play();
-      }
-    } else {
-      if (soundEffect2 !== null) {
-        soundEffect2.src = pth;
-        soundEffect2.play();
-      }
-    }
-  }
-  
   const decoyProb = params.get("decoyProb") || 1.0;
   const keepTargetPicProb = params.get("keepTargetPicProb") || 1.0;
   const waitAfterWrongAnswer = parseFloat(params.get("waitAfterWrongAnswer") || "2.5") * 1000;
@@ -143,6 +118,35 @@ function Challenge({ isOpen, onClosedCallback, params }: ChallengeProps) {
       setDisplayTarget(true);
     }
   }
+
+    //For sounds that aren't on clicks, we can play them on two channels by redirecting the source - this is required for them to work on iOS.
+  //For sounds that are on clicks, we load the audio, and then play it upon click, to improve response times.
+  function playSoundEffect(pth: string, chan: number): void {
+    if (pth === "wrongSound") {
+      if (wrongSound) {
+      wrongSound.currentTime = 0;
+      wrongSound.play();
+      }
+    }
+    if (pth === "rightSound") {
+      if (rightSound) {
+        rightSound.currentTime = 0;
+        rightSound.play();
+      }
+    }
+    if (chan === 1) {
+      if (soundEffect !== null) {
+        soundEffect.src = pth;
+        soundEffect.play();
+      }
+    } 
+    if (chan === 2) {
+      if (soundEffect2 !== null) {
+        soundEffect2.src = pth;
+        soundEffect2.play();
+      }
+    }
+  }
   
   useEffect(() => {
     if (isOpen) {
@@ -164,6 +168,14 @@ function Challenge({ isOpen, onClosedCallback, params }: ChallengeProps) {
         setTimeout(() => { setDisplayTarget(false); }, 2500);
       }
     }
+
+
+    if (firstRender)
+    {
+      setTimeout(() => { setFirstRender(false); }, 10000);
+    }
+
+
   }, [isOpen]);
 
   function onImageClick(key: string){
@@ -172,22 +184,28 @@ function Challenge({ isOpen, onClosedCallback, params }: ChallengeProps) {
     }
     setClickable(false);
     if (key == targetKey){
+      setBoundaryString("500px solid green");
       intervalID.forEach((id) => {window.clearInterval(id);});
       intervalID.length = 0;
       //(new Audio("/assets/victory.mp3")).play();
-      playSoundEffect("rightSound",3);
+      //playSoundEffect("rightSound",3);
+      playSoundEffect("/assets/victory.mp3",1);
       setTimeout(() => { 
         setClickable(true);
+        setBoundaryString("");
         setNeedsNewDraw(true);
         onClosedCallback();
       }, 1000);
       
     } else {
-      
+      setBoundaryString("500px solid red");
       //(new Audio("/assets/georgecry.mp3")).play();
       playSoundEffect("wrongSound",3);
+      //playSoundEffect("/assets/georgecry.mp3",2);
+      
       setTimeout(() => { //Changed from "setInterval" to "setTimeout"
         setClickable(true);
+        setBoundaryString("");
       }, waitAfterWrongAnswer);
     }
     
@@ -206,6 +224,8 @@ function Challenge({ isOpen, onClosedCallback, params }: ChallengeProps) {
             withCloseButton={false}
             onClose={() => {}}
             overlayOpacity={0.0}
+            onClick={() => {}}
+            onTouchStart={() => {}}
             style={{position: "absolute", top: -100, left: -100, width: "100%", height: "100%", backgroundColor: "rgba(0,0,0,0.0)" }} 
           >
             <div style={{position: "absolute", top: 0, left: 0, width: "100%", height: "100%", backgroundColor: "rgba(0,0,0,0.0)" }} draggable={false} 
@@ -216,27 +236,25 @@ function Challenge({ isOpen, onClosedCallback, params }: ChallengeProps) {
       );
     }
   } else {
-
-    if (soundEffect === null) {
-      setSoundEffect(new Audio("/assets/venkhorse.mp3"));
+      //This is the init block
+      if (soundEffect === null) {
+        setSoundEffect(new Audio("/assets/venkhorse.mp3"));
+      }
+      if (soundEffect2 === null) {
+        setSoundEffect2(new Audio("/assets/venkhorse.mp3"));
+      }
+      if (wrongSound === null) {
+        const snd = new Audio("/assets/georgecry.mp3");
+        snd.load();
+        setWrongSound(snd);
+      }
+      if (rightSound === null) {
+        //load audio, and make sure it preloads
+        const snd = new Audio("/assets/victory.mp3");
+        snd.load();
+        setRightSound(snd);
+      }
     }
-    if (soundEffect2 === null) {
-      setSoundEffect2(new Audio("/assets/venkhorse.mp3"));
-    }
-    if (wrongSound === null) {
-      const snd = new Audio("/assets/georgecry.mp3");
-      snd.load();
-      setWrongSound(snd);
-    }
-    if (rightSound === null) {
-      //load audio, and make sure it preloads
-      const snd = new Audio("/assets/victory.mp3");
-      snd.load();
-      setRightSound(snd);
-    }
-
-    setTimeout(() => { setFirstRender(false); }, 10000);
-  }
 
 // Show just the target image
 if (displayTarget) {
@@ -266,10 +284,19 @@ if (displayTarget) {
         withCloseButton={false}
         opened={isOpen}
         onClose={() => {}}
-        size="75vh" // 75% of the viewport height
+        size="75vh" // 75% of the viewport height        
       >
         {/* 2x2 grid, with vertical spacing */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gridGap: "10px", alignItems: "center", MozUserSelect: "none", WebkitUserSelect: "none", msUserSelect: "none", userSelect:"none"}}>
+        <div onClick={() => {}} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gridGap: "10px", alignItems: "center", MozUserSelect: "none", WebkitUserSelect: "none", msUserSelect: "none", userSelect:"none",
+        //disable 300ms mobile click delay
+        touchAction: "manipulation",
+        //set the boundary color to red
+        outline: boundaryString }}>
+        
+
+        
+
+      
             {selectedKeys.map((key) => (
             <div key={key} className = "" >
             <Image
@@ -283,6 +310,7 @@ if (displayTarget) {
               onClick={() => onImageClick(key)}
               onTouchStart={() => onImageClick(key)}
             />
+            
             </div>
           ))}
           </div>
