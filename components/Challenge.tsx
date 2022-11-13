@@ -74,6 +74,7 @@ interface ChallengeProps {
 function Challenge({ isOpen, onClosedCallback, params }: ChallengeProps) {
   const [firstRender, setFirstRender] = useState(true);
   const [displayTarget, setDisplayTarget] = useState(true);
+  const [highlightTarget, setHighlightTarget] = useState(false);
   const [clickable, setClickable] = useState(true);
   const [needsNewDraw, setNeedsNewDraw] = useState(true);
   const [targetKey, setTargetKey] = useState("");
@@ -89,8 +90,13 @@ function Challenge({ isOpen, onClosedCallback, params }: ChallengeProps) {
     
   const decoyProb = params.get("decoyProb") || 1.0;
   const keepTargetPicProb = params.get("keepTargetPicProb") || 1.0;
+  const highlightTargetProb = params.get("highlightTargetProb") || 0.0;
   const waitAfterWrongAnswer = parseFloat(params.get("waitAfterWrongAnswer") || "2.5") * 1000;
-  
+  //parse a flag for whether to highlight the corect answer
+  //const highlightTarget = params.get("highlightTarget") == "true";
+
+
+
   if (needsNewDraw) {
     const selKeys = Object.keys(SoundData).sort((a,b)=>Math.random() - 0.5).slice(0,4);
     
@@ -117,6 +123,12 @@ function Challenge({ isOpen, onClosedCallback, params }: ChallengeProps) {
     if (Math.random() < keepTargetPicProb) {
       setDisplayTarget(true);
     }
+
+    if (Math.random() < highlightTargetProb || params.get("highlightTarget") == "true") {
+      setHighlightTarget(true);
+    } else {
+        setHighlightTarget(false);
+      }
   }
 
     //For sounds that aren't on clicks, we can play them on two channels by redirecting the source - this is required for them to work on iOS.
@@ -184,7 +196,7 @@ function Challenge({ isOpen, onClosedCallback, params }: ChallengeProps) {
     }
     setClickable(false);
     if (key == targetKey){
-      setBoundaryString("500px solid green");
+      setBoundaryString("500px solid #AAFF00");
       intervalID.forEach((id) => {window.clearInterval(id);});
       intervalID.length = 0;
       //(new Audio("/assets/victory.mp3")).play();
@@ -287,18 +299,18 @@ if (displayTarget) {
         size="75vh" // 75% of the viewport height        
       >
         {/* 2x2 grid, with vertical spacing */}
-        <div onClick={() => {}} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gridGap: "10px", alignItems: "center", MozUserSelect: "none", WebkitUserSelect: "none", msUserSelect: "none", userSelect:"none",
+        <div onClick={() => {}} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gridGap: "15px", alignItems: "center", MozUserSelect: "none", WebkitUserSelect: "none", msUserSelect: "none", userSelect:"none",
         //disable 300ms mobile click delay
         touchAction: "manipulation",
-        //set the boundary color to red
+        //set the boundary color
         outline: boundaryString }}>
-        
 
-        
-
-      
             {selectedKeys.map((key) => (
-            <div key={key} className = "" >
+            <div key={key} className = ""
+            style={{
+              //sets the outline based on whether the key is the target key
+              outline: (highlightTarget && key === targetKey) ? "15px solid #AAFF00" : "",
+              }}>
             <Image
               key={key}
               src={ImageData[key] ?? ""}
@@ -309,6 +321,7 @@ if (displayTarget) {
               draggable={false}
               onClick={() => onImageClick(key)}
               onTouchStart={() => onImageClick(key)}
+              
             />
             
             </div>

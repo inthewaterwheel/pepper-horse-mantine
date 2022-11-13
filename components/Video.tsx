@@ -3,7 +3,7 @@ import YouTube, { YouTubeEvent, YouTubePlayer } from "react-youtube";
 import { useState } from "react";
 import Challenge from "./Challenge";
 
-//URL parameters example: ?vid=cMgsfVTg37Q&decoyProb=0.5&keepTargetPicProb=0.5&waitAfterWrongAnswer=3.0&challengeInterval=20.0
+//URL parameters example: ?vid=cMgsfVTg37Q&decoyProb=0.5&keepTargetPicProb=0.5&waitAfterWrongAnswer=3.0&challengeInterval=20.0&highlightTargetProb=0.9
 
 const Video: NextPage = () => {
   const [isOpen, setIsOpen] = useState(false);
