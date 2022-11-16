@@ -121,12 +121,13 @@ function Challenge({ isOpen, onClosedCallback, params }: ChallengeProps) {
     setSelectedKeys(selKeysWithNulls);
     setTargetKey(randomKey);
     setNeedsNewDraw(false);
+    const targetWasDisplayed = Math.random() < keepTargetPicProb;
     //This is the rate at which the target pic will be displayed.
-    if (Math.random() < keepTargetPicProb) {
+    if (targetWasDisplayed) {
       setDisplayTarget(true);
     }
-
-    if (Math.random() < highlightTargetProb || params.get('highlightTarget') == 'true') {
+    const targetWasHighlighted = (Math.random() < highlightTargetProb || params.get('highlightTarget') == 'true');
+    if (targetWasHighlighted) {
       setHighlightTarget(true);
     } else {
       setHighlightTarget(false);
@@ -135,8 +136,8 @@ function Challenge({ isOpen, onClosedCallback, params }: ChallengeProps) {
     setLog({
       target: randomKey,
       metadata: {
-        decoys: selKeys,
-        targetDisplayed: displayTarget,
+        decoys: selKeysWithNulls,
+        targetDisplayed: targetWasDisplayed,
         hint: highlightTarget,
         incorrectGuesses: 0,
       },
@@ -194,8 +195,15 @@ function Challenge({ isOpen, onClosedCallback, params }: ChallengeProps) {
       }, 4000);
       intervalID.push(timerID);
       if (displayTarget) {
+        setClickable(false);
         setTimeout(() => {
           setDisplayTarget(false);
+
+          //Trying to make it not clickable for a short bit after the target is displayed
+          setTimeout(() => {
+            setClickable(true);
+          }, 1000);
+
         }, 2500);
       }
     }
@@ -208,7 +216,7 @@ function Challenge({ isOpen, onClosedCallback, params }: ChallengeProps) {
   }, [isOpen]);
 
   function onImageClick(key: string) {
-    if (!clickable) {
+    if (!clickable || key == 'null') {
       return;
     }
     setClickable(false);
@@ -269,10 +277,10 @@ function Challenge({ isOpen, onClosedCallback, params }: ChallengeProps) {
             opened={true}
             size="0%"
             withCloseButton={false}
-            onClose={() => {}}
+            onClose={() => { }}
             overlayOpacity={0.0}
-            onClick={() => {}}
-            onTouchStart={() => {}}
+            onClick={() => { }}
+            onTouchStart={() => { }}
             style={{
               position: 'absolute',
               top: -100,
@@ -292,8 +300,8 @@ function Challenge({ isOpen, onClosedCallback, params }: ChallengeProps) {
                 backgroundColor: 'rgba(0,0,0,0.0)',
               }}
               draggable={false}
-              onClick={() => {}}
-              onTouchStart={() => {}}
+              onClick={() => { }}
+              onTouchStart={() => { }}
             />
           </Modal>
         </div>
@@ -308,7 +316,7 @@ function Challenge({ isOpen, onClosedCallback, params }: ChallengeProps) {
       setSoundEffect2(new Audio('/assets/venkhorse.mp3'));
     }
     if (wrongSound === null) {
-      const snd = new Audio('/assets/georgecry.mp3');
+      const snd = new Audio('/assets/georgecry_short.mp3');
       snd.load();
       setWrongSound(snd);
     }
@@ -327,9 +335,9 @@ function Challenge({ isOpen, onClosedCallback, params }: ChallengeProps) {
         centered
         withCloseButton={false}
         opened={isOpen}
-        onClose={() => {}}
-        onClick={() => {}}
-        onTouchStart={() => {}}
+        onClose={() => { }}
+        onClick={() => { }}
+        onTouchStart={() => { }}
         size="75vh" // 75% of the viewport height
       >
         <div
@@ -349,8 +357,8 @@ function Challenge({ isOpen, onClosedCallback, params }: ChallengeProps) {
             height={400}
             objectFit="cover"
             draggable={false}
-            onClick={() => {}}
-            onTouchStart={() => {}}
+            onClick={() => { }}
+            onTouchStart={() => { }}
           />
         </div>
       </Modal>
@@ -363,12 +371,12 @@ function Challenge({ isOpen, onClosedCallback, params }: ChallengeProps) {
       centered
       withCloseButton={false}
       opened={isOpen}
-      onClose={() => {}}
+      onClose={() => { }}
       size="75vh" // 75% of the viewport height
     >
       {/* 2x2 grid, with vertical spacing */}
       <div
-        onClick={() => {}}
+        onClick={() => { }}
         style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
